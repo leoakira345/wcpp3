@@ -1,4 +1,4 @@
-console.log("server.js has started");
+console.log("server.js has started")
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
@@ -65,6 +65,14 @@ const commentSchema = new mongoose.Schema({
   text: { type: String, required: true }
 }, { timestamps: true });
 
+// NEW ADDITION: Client Schema (for admin client management)
+const clientSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true }, // Email should be unique for clients
+  phone: { type: String },
+  address: { type: String }
+}, { timestamps: true });
+
 // ✅ NEW ADDITION: Booking Schema
 const bookingSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -75,16 +83,13 @@ const bookingSchema = new mongoose.Schema({
   date: { type: String } // keep date field for bookings
 }, { timestamps: true });
 
-// Models (excluding Client which is imported from public/Client.js)
 const Appointment = mongoose.model('Appointment', appointmentSchema);
 const ComplaintReport = mongoose.model('ComplaintReport', complaintReportSchema);
 const JobApplication = mongoose.model('JobApplication', jobApplicationSchema);
 const Review = mongoose.model('Review', reviewSchema);
 const Comment = mongoose.model('Comment', commentSchema);
+const Client = mongoose.model('Client', clientSchema);
 const Booking = mongoose.model('Booking', bookingSchema);
-
-// Client Model Import from public (adjust filename if needed)
-const Client = require(path.join(__dirname, 'public', 'Client.js')); // make sure public/Client.js exports the Mongoose model
 
 // Admin Credentials (FOR DEMONSTRATION PURPOSES ONLY - In a real app, use hashed passwords and JWTs/sessions)
 const ADMIN_USERNAME = 'AdminPauls';
@@ -139,10 +144,6 @@ app.get('/api/clients', isAdminAuthenticated, async (req, res) => {
 app.delete('/api/clients/:id', isAdminAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
-    // validate id format
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: 'Invalid client ID format' });
-    }
     const result = await Client.findByIdAndDelete(id);
     if (!result) {
       return res.status(404).json({ message: 'Client not found' });
@@ -229,6 +230,7 @@ app.post('/api/appointments', isAdminAuthenticated, async (req, res) => {
     res.status(400).json({ message: 'Error creating appointment', error: error.message });
   }
 });
+
 
 // Get All Appointments (Public and Admin)
 app.get('/api/appointments', async (req, res) => {
